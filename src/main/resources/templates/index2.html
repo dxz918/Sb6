@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="zh_CN" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{chip::header('员工管理')}">
+</head>
+<body>
+<table id="dg"></table>
+<script type="text/javascript">
+    var url;
+    var path = window.document.location.pathname;
+    var ctx = path.substring(0, path.substr(1).indexOf("/") + 1);
+
+    //添加的函数
+    function addMethod() {
+        $('#dlg').dialog('open').dialog('setTitle', '添加员工');//打开对话框
+        $('#fm').form('clear');//清除表单数据
+        url = ctx + '/emp/add';
+    }
+
+    //修改
+    function updateMethod() {
+        var row = $('#dg').datagrid('getSelected');//选中的行
+        //判断是否选中一行
+        if (row) {
+            //打开对话框
+            $('#dlg').dialog('open').dialog('setTitle', '编辑员工');
+            //往表单中加载选中行的数据
+            $('#fm').form('load', row);
+            url = ctx + '/emp/update';
+        } else {
+            $.messager.alert('警告', '请选择你要修改的行!', 'warning');
+        }
+    }
+
+    //删除
+    function deleteMethod() {
+        if ($("#dg").datagrid("getSelections").length > 0) {
+            var row = $("#dg").datagrid("getSelections");//返回一个数组
+            var ids = new Array();
+            for (var i = 0; i < row.length; i++) {
+                ids[i] = row[i].empno;
+            }
+            url = ctx + "/emp/delete?ids=" + ids;
+            $.messager.confirm('删除确认', '您确定要删除这行吗?',
+                function (r) {
+                    if (r) {
+                        //发生ajax请求
+                        $.ajax({
+                            url: url,
+                            type: "POST",
+                            success: function (json) {
+                                if (json == "success") {
+                                    //刷新数据
+                                    $("#dg").datagrid("reload");
+                                    $.messager.show({
+                                        title: '系统消息',
+                                        msg: '删除成功',
+                                        timeout: 3000,
+                                        showType: 'slide'
+                                    });
+                                }
+                            },
+                            error: function () {
+                                $.messager.show({
+                                    title: '系统消息',
+                                    msg: '删除失败',
+                                    timeout: 3000,
+                                    showType: 'slide'
+                                });
+                            }
+                        });
+                    }
+                });
+        } else {
+            $.messager.alert("系统信息", "至少选择一行");
+        }
+    }
+
+    $(function () {
+        $("#dg").datagrid({
+            url: ctx + '/emp/page',
+            method: 'get',
+            fit: true,//自动适应父容器大小
+            pagination: true,//分页栏
+            rownumbers: true,//显示行号
+            singleSelect: false,//只允许选中一行,
+            // toolbar: [{//工具栏
+            //     text: '添加',
+            //     iconCls: 'icon-add',//自动去themes/icons下找名为add的图片
+            //     handler: function () {//要做的事情
+            //         $('#dlg').dialog('open').dialog('setTitle', '添加员工');//打开对话框
+            //         $('#fm').form('clear');//清除表单数据
+            //         url = ctx + '/emp/add';
+            //     }
+            // }, '-', {
+            //     text: '修改',
+            //     iconCls: 'icon-edit',
+            //     handler: function () {
+            //         var row = $('#dg').datagrid('getSelected');//选中的行
+            //         //判断是否选中一行
+            //         if (row) {
+            //             //打开对话框
+            //             $('#dlg').dialog('open').dialog('setTitle', '编辑员工');
+            //             //往表单中加载选中行的数据
+            //             $('#fm').form('load', row);
+            //             url = ctx + '/emp/update';
+            //         } else {
+            //             $.messager.alert('警告', '请选择你要修改的行!', 'warning');
+            //         }
+            //     }
+            // }, '-', {
+            //     text: '删除',
+            //     iconCls: 'icon-cancel',
+            //     handler: function () {
+            //         //因为删除不需要对话框，，所以在里面直接异步删除
+            //         //获取选中的行
+            //         if ($("#dg").datagrid("getSelections").length > 0) {
+            //             var row = $("#dg").datagrid("getSelections");//返回一个数组
+            //             var ids = new Array();
+            //             for (var i = 0; i < row.length; i++) {
+            //                 ids[i] = row[i].empno;
+            //             }
+            //             url = ctx + "/emp/delete?ids=" + ids;
+            //             $.messager.confirm('删除确认', '您确定要删除这行吗?',
+            //                 function (r) {
+            //                     if (r) {
+            //                         //发生ajax请求
+            //                         $.ajax({
+            //                             url: url,
+            //                             type: "POST",
+            //                             success: function (json) {
+            //                                 if (json == "success") {
+            //                                     //刷新数据
+            //                                     $("#dg").datagrid("reload");
+            //                                     $.messager.show({
+            //                                         title: '系统消息',
+            //                                         msg: '删除成功',
+            //                                         timeout: 3000,
+            //                                         showType: 'slide'
+            //                                     });
+            //                                 }
+            //                             },
+            //                             error: function () {
+            //                                 $.messager.show({
+            //                                     title: '系统消息',
+            //                                     msg: '删除失败',
+            //                                     timeout: 3000,
+            //                                     showType: 'slide'
+            //                                 });
+            //                             }
+            //                         });
+            //                     }
+            //                 });
+            //         } else {
+            //             $.messager.alert("系统信息", "至少选择一行");
+            //         }
+            //     }
+            // }],
+            toolbar: '#tb',
+            columns: [
+                [
+                    {field: 'empno', title: '编号', width: 100, hidden: true},
+                    {field: 'ename', title: '姓名', width: 100},
+                    {field: 'job', title: '岗位', width: 100, align: 'right'},
+                    {field: 'mgr', title: '上级领导', width: 100, align: 'right'},
+                    {field: 'hiredate', title: '入职日期', width: 100, align: 'right'},
+                    {field: 'sal', title: '工资', width: 100, align: 'right', sortable: true},//sortable:设置该列可以排序
+                    {field: 'comm', title: '奖金', width: 100, align: 'right'},
+                    {
+                        field: 'dept', title: '部门', width: 100, formatter:
+                            function (value, row, index) {//index:行下标（从0开始）  row:行数据  value:字段值
+                                if (row.dept) {
+                                    return row.dept.dname;
+                                } else {
+                                    return value;
+                                }
+                            }
+                    }
+                ]
+            ]
+        });
+    })
+
+
+    // 表单提交
+    function saveOrUpdateUser() {
+        //alert(url);
+        $('#fm').form('submit', {
+            url: url,
+            method: "post",
+            onSubmit: function () {
+                return $(this).form('validate');
+            },
+            success: function (result) {
+                if (result == "success") {
+                    //保存成功,提示信息
+                    $.messager.show({
+                        title: '提示',
+                        msg: "更新成功",
+                        timeout: 2000,
+                        showType: 'show'
+                    });
+                    //关闭对话框
+                    $('#dlg').dialog('close');
+                    //刷新数据表格
+                    $('#dg').datagrid('reload');
+                } else {
+                    //保存失败
+                    $.messager.show({
+                        title: '提示',
+                        msg: "更新失败",
+                        timeout: 2000,
+                        showType: 'show'
+                    });
+                }
+            }
+        });
+    }
+
+
+    //下拉列表填充数据
+    $('#cbb').combobox({
+        url: ctx + '/emp/depts',
+        valueField: 'deptno',
+        textField: 'dname',
+        label: '部门:',
+        required: true,
+        editable: false
+    });
+</script>
+
+
+<!--表单：用于增加和修改-->
+<div id="dlg" class="easyui-dialog"
+     style="width:400px;height:600px;padding:10px 20px"
+     closed="true" buttons="#dlg-buttons">
+    <div class="ftitle">添加员工</div>
+    <form id="fm" method="post">
+        <div style="margin-bottom:20px;display: none;">
+            <input class="easyui-textbox" name="empno" style="width:100%"
+                   data-options="label:'编号:'">
+        </div>
+        <div style="margin-bottom:20px">
+            <input class="easyui-textbox" name="ename" style="width:100%"
+                   data-options="label:'姓名:',required:true">
+        </div>
+        <div style="margin-bottom:20px">
+            <input class="easyui-textbox" name="job" style="width:100%" data-options="label:'岗位:',required:true">
+        </div>
+        <div style="margin-bottom:20px">
+            <input class="easyui-textbox" name="mgr" style="width:100%" data-options="label:'上级领导:',required:true">
+        </div>
+        <div style="margin-bottom:20px">
+            <input class="easyui-datebox" name="hiredate" style="width:100%"
+                   data-options="label:'入职日期:',required:true">
+        </div>
+        <div style="margin-bottom:20px">
+            <input class="easyui-textbox" name="sal" style="width:100%" data-options="label:'工资:',required:true">
+        </div>
+        <div style="margin-bottom:20px">
+            <input class="easyui-textbox" name="comm" style="width:100%"
+                   data-options="label:'奖金:',required:true">
+        </div>
+        <div style="margin-bottom:20px">
+            <input id="cbb" class="easyui-combobox" name="deptno">
+            <!--<input class="easyui-textbox" name="deptno" style="width:100%"-->
+            <!--data-options="label:'部门:',required:true">-->
+        </div>
+    </form>
+</div>
+<div id="dlg-buttons">
+    <a href="#" class="easyui-linkbutton" iconCls="icon-ok"
+       onclick="saveOrUpdateUser()">保存</a>
+    <a href="#" class="easyui-linkbutton" iconCls="icon-cancel"
+       onclick="javascript:$('#dlg').dialog('close')">取消</a>
+</div>
+
+
+<div id="tb" style="padding:5px;height:auto">
+    <div style="margin-bottom:5px">
+        <a href="#" class="easyui-linkbutton" iconCls="icon-add" plain="true" onclick="addMethod()"></a>
+        <a href="#" class="easyui-linkbutton" iconCls="icon-edit" plain="true" onclick="updateMethod()"></a>
+        <a href="#" class="easyui-linkbutton" iconCls="icon-remove" plain="true" onclick="deleteMethod()"></a>
+    </div>
+    <div>
+        姓名: <input class="easyui-textbox" style="width:80px" id="enamex" name="ename">
+        部门:
+        <input name="deptno" id="deptnox" class="easyui-combobox" url="/ssm/emp/depts"
+               valueField="deptno" textField="dname">
+        <a href="#" class="easyui-linkbutton" iconCls="icon-search" id="likeSel">Search</a>
+    </div>
+</div>
+
+
+<script>
+    $("#likeSel").click(function () {
+        // var path = window.document.location.pathname;
+        // var ctx = path.substring(0, path.substr(1).indexOf("/") + 1);
+        // var options = $('#dg').datagrid('getPager').data("pagination").options;
+        // var pagej = options.pageNumber; //当前页数
+        // var rowsj = options.pageSize; //每页的记录数（行数）
+        $('#dg').datagrid('load',{
+            ename: $("#enamex").val(),
+            deptno: $("#deptnox").val()
+        });
+
+    })
+</script>
+
+</body>
+</html>
